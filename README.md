@@ -1,4 +1,4 @@
-# AI Terminal
+# AI-poweredNLPTerminal
 
 ## Description
 An AI-powered terminal that converts natural language into executable bash commands using locally-hosted Ollama models.
