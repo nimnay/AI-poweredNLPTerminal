@@ -8,7 +8,9 @@ def ask_llama(prompt, model="gemma:2b"):
         response = ollama.generate(
             model=model,
             prompt=prompt,
-            system=""
+            system="You are a Linux terminal expert. " \
+            "Respond ONLY with valid bash commands.",
+            temperature=0.0,
             stream=False
         )
         return response["response"]
