@@ -3,14 +3,13 @@ from rich.console import Console
 
 console = Console()
 
-def ask_llama(prompt, model="gemma:2b"):
+def ask_llama(prompt, model="llama3"):
     try:
         response = ollama.generate(
             model=model,
             prompt=prompt,
             system="You are a Linux terminal expert. " \
             "Respond ONLY with valid bash commands.",
-            temperature=0.0,
             stream=False
         )
         return response["response"]
@@ -23,18 +22,21 @@ def interpret_command(user_input):
     Respond ONLY with the command itself, no explanations.test_prompt
 
     Examples:
-    Input: "show running processes"
-    Output: "ps aux"
+    Input: "show files"
+    Output: "ls -la"
 
     Input: "{user_input}"
     Output:"""
     
-    return ask_llama(prompt).strip()
+    return ask_llama(prompt)
 
 if __name__ == "__main__":
+    console.print("[bold green]AI Terminal[/] (type 'exit' to quit)")
     while True:
         user_input = input("> ")
         if user_input.lower() in ["exit", "quit"]:
             break
+            
         command = interpret_command(user_input)
-        print(f"Command: {command}")
+        console.print(f"[yellow]>> {command}[/yellow]")
+
