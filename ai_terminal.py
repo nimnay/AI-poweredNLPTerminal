@@ -8,6 +8,7 @@ def ask_llama(prompt, model="gemma:2b"):
         response = ollama.generate(
             model=model,
             prompt=prompt,
+            system=""
             stream=False
         )
         return response["response"]
@@ -15,7 +16,23 @@ def ask_llama(prompt, model="gemma:2b"):
         console.print(f"[red]Error: {e}[/red]")
         return None
     
+def interpret_command(user_input):
+    prompt = f"""Convert this natural language command to a bash command.
+    Respond ONLY with the command itself, no explanations.test_prompt
+
+    Examples:
+    Input: "show running processes"
+    Output: "ps aux"
+
+    Input: "{user_input}"
+    Output:"""
+    
+    return ask_llama(prompt).strip()
+
 if __name__ == "__main__":
-    test_prompt = "Convert to bash command: list files"
-    result = ask_llama(test_prompt)
-    console.print(f"[green]LLM Response:[/green] {result}")
+    while True:
+        user_input = input("> ")
+        if user_input.lower() in ["exit", "quit"]:
+            break
+        command = interpret_command(user_input)
+        print(f"Command: {command}")
