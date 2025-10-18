@@ -19,6 +19,8 @@ Usage:
 # Import required libraries
 import os  # For environment variables
 import subprocess  # For running shell commands
+import re  # For regex pattern matching
+from difflib import SequenceMatcher  # For fuzzy string matching
 import google.generativeai as genai  # For Gemini API
 from rich.console import Console  # For styled terminal output
 from pathlib import Path  # For file path handling
@@ -132,6 +134,70 @@ def confirm_execution(cmd):
     console.print(f"[yellow]>> {cmd}[/yellow]")
     return input("Execute? [y/N]: ").lower() == 'y'
 
+# Fuzzy file matching functions
+def fuzzy_match_file(query, search_dir="."):
+    """Find files that fuzzy match the query in the given directory."""
+    try:
+        search_path = Path(search_dir)
+        if not search_path.exists():
+            return None
+        
+        all_items = [item.name for item in search_path.iterdir()]
+        query_lower = query.lower()
+        
+        best_match = None
+        best_score = 0.5  # Minimum threshold
+        
+        for item in all_items:
+            item_lower = item.lower()
+            
+            # Exact match
+            if query_lower == item_lower:
+                return item
+            
+            # Contains match
+            if query_lower in item_lower:
+                score = 0.9 * (len(query) / len(item))
+                if score > best_score:
+                    best_score = score
+                    best_match = item
+                continue
+            
+            # Fuzzy match
+            ratio = SequenceMatcher(None, query_lower, item_lower).ratio()
+            if ratio > best_score:
+                best_score = ratio
+                best_match = item
+        
+        return best_match
+    except:
+        return None
+
+def expand_fuzzy_in_command(command):
+    """Replace fuzzy file references in command with actual file names."""
+    # Pattern to find potential file references after common commands
+    patterns = [
+        (r'(cd|type|del|move|copy|rename|dir)\s+([^\s&|<>]+)', 1),
+    ]
+    
+    modified = command
+    for pattern, group_idx in patterns:
+        matches = list(re.finditer(pattern, command, re.IGNORECASE))
+        for match in reversed(matches):  # Reverse to maintain positions
+            potential_file = match.group(group_idx + 1)
+            
+            # Skip if it's a valid path or special char
+            if Path(potential_file).exists() or any(c in potential_file for c in ['*', '?', '%', '..']):
+                continue
+            
+            # Try fuzzy match
+            fuzzy_result = fuzzy_match_file(potential_file)
+            if fuzzy_result:
+                console.print(f"[dim]💡 {potential_file} → {fuzzy_result}[/dim]")
+                modified = modified.replace(potential_file, f'"{fuzzy_result}"', 1)
+    
+    return modified
+
 # Main loop: interactively accept user input and process commands
 if __name__ == "__main__":
     console.print("[bold green]Windows AI Terminal[/]")  # Welcome message
@@ -154,6 +220,9 @@ if __name__ == "__main__":
                 if not command:
                     console.print("[red]Failed to generate Windows command.[/red]")
                     continue
+
+            # Apply fuzzy file matching to the command
+            command = expand_fuzzy_in_command(command)
 
             # Always ask for confirmation, but warn if dangerous
             if is_dangerous(command):
