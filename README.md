@@ -275,5 +275,3 @@ Project Link: [https://github.com/nimnay/AI-poweredNLPTerminal](https://github.c
 - Type `help` to see all available features
 - Check `QUICKSTART.md` for a quick reference guide
 - The AI learns from context - be specific in your requests
-
-Made with ❤️ by the AI Terminal Team
